@@ -11,6 +11,7 @@ CRANK|cxl2in|khjh4s|Don|40|#FFFFFF|all|-1|grol_45809e50-304c-437c-b846-4e203895d
 CRANK|cxl2in|kxyp0j|AT〢High Mangment|30|#FFFFFF|bring,goto,pullto,carry,places,pullall,freeze,jail,unjail,unmute,mute,warn,clearwarn,kick,ban,release,podaccess,admaccess,items,returnitems,givefly,mic,radio,adminroom,podcast,banroom,calls,staffview,screens,videolink,boards,gamereset,store,boardclear,boardlog|-1|grol_27fe7e1f-e5c3-4029-af68-db0927366d82
 CRANK|cxl2in|ks6zf0|AT〢Technical M  angment|20|#FFFFFF|bring,goto,pullto,carry,places,freeze,unjail,jail,mute,unmute,warn,clearwarn,podaccess,items,returnitems,givefly,radio,adminroom,podcast,calls,staffview,screens,videolink,boardclear,boardlog,gamereset,store|-1|grol_b66822ff-ab1e-488f-b0a6-539829dd5ba5
 CRANK|cxl2in|k9d1d3|AT〢 Support|10|#FFFFFF|goto,carry,places,freeze,jail,unjail,mute,unmute,warn,clearwarn,items,returnitems,radio,adminroom,podcast,calls,staffview,screens,videolink,boardclear,boardlog,gamereset,store|-1|grol_ff5233ff-75f8-4348-ac7c-4c9593bc6198
+USER|-Ony-|-||
 USER|-Ony|rvi373||
 USER|S T Oʚɞ|rwkqon||
 USER|Ňყxïøn|rvi373||
