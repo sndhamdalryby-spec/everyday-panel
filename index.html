@@ -147,7 +147,7 @@ const PERM_GROUPS = [
   ["قائمة الإدارة — الأغراض والطيران والمايك", [["items","إسقاط أغراض اللاعب"],["returnitems","رجّع المرمي"],["givefly","أعطه طيران / اسحب الطيران"],["givemic","أعطه المايك / اسحب المايك"],["mic","مايك الإدارة (يسمعه الكل)"]]],
   ["الراديو", [["radio","إنشاء راديو: يفتح قناة برقمها ويدخلها"],["radioctl","التحكم بالراديو: كل القنوات، يدخل ويطلّع أي أحد، يقفل ويفتح، وإشعار لما أحد يدخل"],["radioadd","دخّله قناتي / طلّعه من قناتي"]]],
   ["الأماكن", [["adminroom","دخول غرفة الإدارة"],["podcast","دخول البودكاست مجاناً"],["banroom","دخول غرفة الحظر"],["viprooms","دخول غرف VIP المحجوزة"],["walls","المرور من الجدران المخفية (ما تدخل ضمن كل الصلاحيات)"],["ghost","وضع الحر 👻 تعدّي كل الجدران والحدود — اضغط القفز ٣ مرات بسرعة (ما تدخل ضمن كل الصلاحيات)"]]],
-  ["أدوات ثانية", [["calls","استقبال طلبات استدعاء الإدارة"],["staffview","يشوف حالة اللاعبين ووسم الجدد"],["screens","التحكم بالشاشات المقفلة"],["videolink","نسخ رابط الفيديو المشغّل"],["boards","الكتابة على السبورات الخاصة"],["boardclear","مسح السبورة كاملة"],["boardlog","سجل السبورة: مين رسم ومين مسح، ويرجّع الرسم الممسوح (يشوفه هو بس)"],["gamereset","ريست الألعاب (البلياردو)"],["store","الطيران والخشبة مجاناً"],["instclan","تحديد كلان الانستنس (لأي كلان هذا الانستنس)"]]]
+  ["أدوات ثانية", [["calls","استقبال طلبات استدعاء الإدارة"],["staffview","يشوف حالة اللاعبين ووسم الجدد"],["screens","التحكم بالشاشات المقفلة"],["videolink","نسخ رابط الفيديو المشغّل"],["video","تشغيل فيديو في الشاشة الكبيرة (لما يكون الفيديو للرتب بس)"],["boards","الكتابة على السبورات الخاصة"],["boardclear","مسح السبورة كاملة"],["boardlog","سجل السبورة: مين رسم ومين مسح، ويرجّع الرسم الممسوح (يشوفه هو بس)"],["gamereset","ريست الألعاب (البلياردو)"],["store","الطيران والخشبة مجاناً"],["instclan","تحديد كلان الانستنس (لأي كلان هذا الانستنس)"],["stage","التحكم بالمسرح: بدء الاجتماع والطاولة والإضاءة"],["vipwatch","يشوف شاشات غرف VIP في جدار المراقبة (ما تدخل ضمن كل الصلاحيات)"]]]
 ];
 const PERMS = PERM_GROUPS.flatMap(g => g[1]).concat([["all","كل الصلاحيات"]]);
 // v17: one permission per option of the admin menu. An older config used group keys; they open up into the new ones
@@ -193,7 +193,7 @@ function defaults(){
     {key:"mod",name:"مشرف",color:"#3EA0FF",icon:"badge",img:null,perms:["warn","jail","tp","mute","adminroom","podcast","freeze","items"]},
     {key:"helper",name:"مساعد",color:"#2EE59D",icon:"heart",img:null,perms:["warn","podcast"]},
     {key:"vip",name:"عضو مميز",color:"#FFB86B",icon:"gem",img:null,perms:["podcast"]}],
-    clans:[], users:[], vip:[],
+    clans:[], users:[], vip:[], vipTypes:[], vipInfo:{}, video:"all",
     rings:[{target:"rank:owner",color:"#FFD54D",place:"head",tex:null},{target:"vip",color:"#FFB86B",place:"shoulder",tex:null}]};
 }
 
@@ -204,6 +204,7 @@ function toText(atlasVer, ringsVer){
              "# USER|vrchat name|rank|clan|clan rank   VIP|vrchat name   RING|rank:key / clan:key / crank:clan.rank / vip / user:name|color|head or shoulder|picture strip|size %|arm: % shoulder->elbow, head: height %",
              "# ATLAS|cols|rows|version (emblems)   RINGS|cols|rows|version (ring pictures, 1024 x 128 slots)"];
   L.push("PERMV|2");
+  if (M.video === "ranks") L.push("VIDEO|ranks");   // v28: the big screen only for ranks with "video"
   const n = M.ranks.length;
   M.ranks.forEach((r,i) => { const ps = compat(r.perms); L.push(["RANK",r.key,clean(r.name),(n-i)*10,r.color.toUpperCase(),r.icon,(ps.length?ps.join(","):"none"),(r.cell??-1)].join("|")); });
   M.clans.forEach(c => {
@@ -216,7 +217,10 @@ function toText(atlasVer, ringsVer){
     if (ov.some(x => /^\+(bring|goto|pullto|carry|places)$/.test(x)) && !ov.includes("+tp")) ov = ov.concat(["+tp"]);
     if (ov.some(x => /^\+(podaccess|admaccess|radioadd)$/.test(x)) && !ov.includes("+access")) ov = ov.concat(["+access"]);
     L.push(["USER",clean(u.name),u.rank||"-",u.clan||"",u.crank||""].concat(ov.length ? [ov.join(",")] : []).join("|")); });
-  (M.vip || []).map(clean).filter(Boolean).forEach(n => L.push(["VIP", n].join("|")));
+  (M.vipTypes || []).forEach(t => L.push(["VIPT",t.key,clean(t.name),(t.color || "#FFB86B").toUpperCase(),clean(t.label || ""),((t.perms || []).join(",") || "none")].join("|")));
+  (M.vip || []).map(clean).filter(Boolean).forEach(n => { const vi = (M.vipInfo || {})[n.toLowerCase()] || {};
+    const ty = (M.vipTypes || []).some(t => t.key === vi.type) ? vi.type : "", tx = clean(vi.text || "");
+    L.push(["VIP", n].concat(ty || tx ? [ty, tx] : []).join("|")); });
   M.rings.forEach(g => L.push(["RING",g.target,g.color.toUpperCase(),g.place,(g.tex ? (g.cell ?? -1) : -1),Math.round(g.size ?? 100),(g.off == null ? -1 : Math.round(g.off))].join("|")));
   if (atlasVer) L.push(["ATLAS",COLS,ROWS,atlasVer].join("|"));
   if (ringsVer) L.push(["RINGS",1,RING_SLOTS,ringsVer].join("|"));
@@ -224,7 +228,7 @@ function toText(atlasVer, ringsVer){
 }
 
 function fromText(t){
-  const m = {ranks:[],clans:[],users:[],rings:[],vip:[]}; const cm = {};
+  const m = {ranks:[],clans:[],users:[],rings:[],vip:[],vipTypes:[],vipInfo:{},video:"all"}; const cm = {};
   for (let line of t.split(/\r?\n/)){
     line = line.trim(); if (!line || line.startsWith("#")) continue;
     const p = line.split("|"); const k = p[0].trim().toUpperCase();
@@ -234,7 +238,10 @@ function fromText(t){
       perms:(p[6]||"").split(",").map(s=>s.trim().toLowerCase()).filter(s=>s&&s!=="none"),cell:p.length>=8?+p[7]:-1,roles:(p[8]||"").split(",").map(s=>s.trim()).filter(Boolean),img:null}); }
     else if (k === "USER" && p.length >= 3) m.users.push({name:p[1].trim(),rank:(p[2].trim()==="-"?"":p[2].trim().toLowerCase()),clan:(p[3]||"").trim().toLowerCase(),crank:(p[4]||"").trim().toLowerCase(),perms:(p[5]||"").split(",").map(x=>x.trim().toLowerCase()).filter(x=>/^[+-][a-z]+$/.test(x))});
     else if (k === "RING" && p.length >= 3) m.rings.push({target:p[1].trim().toLowerCase(),color:p[2].trim(),place:((p[3]||"head").trim().toLowerCase()==="shoulder"?"shoulder":"head"),cell:p.length>=5?(+p[4]):-1,tex:null,size:p.length>=6?(+p[5]||100):100,off:(p.length>=7&&+p[6]>=0)?+p[6]:null});
-    else if (k === "VIP" && p.length >= 2 && p[1].trim()) m.vip.push(p[1].trim());
+    else if (k === "VIP" && p.length >= 2 && p[1].trim()){ const vn = p[1].trim(); m.vip.push(vn); m.vipInfo[vn.toLowerCase()] = {type:(p[2] || "").trim(), text:(p[3] || "").trim()}; }
+    else if (k === "VIPT" && p.length >= 3 && p[1].trim()) m.vipTypes.push({key:p[1].trim(), name:(p[2] || "").trim(), color:(p[3] || "#FFB86B").trim(), label:(p[4] || "").trim(),
+      perms:(p[5] || "").split(",").map(x => x.trim()).filter(x => x && x !== "none")});
+    else if (k === "VIDEO" && p.length >= 2) m.video = p[1].trim().toLowerCase() === "ranks" ? "ranks" : "all";
   }
   const literal = /^\s*PERMV\|2/m.test(t);
   m.ranks.forEach(r => { r.perms = literal ? r.perms.filter(k => k !== "tp" && k !== "teleport" && k !== "access") : expandLegacy(r.perms); });
@@ -365,14 +372,18 @@ async function encodePNG(w, h, rgba){
 
 // ---------------------------------------------------------------- GitHub
 function cfg(){ return {o:$("owner").value.trim(), r:$("repo").value.trim(), b:$("branch").value.trim()||"main", t:$("token").value.trim()}; }
-const PANEL_VER = 27;   // v24: «النسخ السابقة» (bring back an earlier save) + clan ranks show only what a clan may have
+const PANEL_VER = 31;   // v31: a save merges another admin's changes made since this page loaded config.txt (nobody's work is wiped)
+const PANEL_VER_30 = 30;   // v30: VIP types (name, colour, the text over the head, admin permissions) + each VIP's type / own text; members refreshed every 10 min while open
+const PANEL_VER_29 = 29;   // v29: + "stage" (the sea walk's stage: meeting, table, lights) and "vipwatch" (VIP TVs on the admin watch wall - on its own)
+                         // v28: «مين يشغّل فيديو في الشاشة الكبيرة» (VIDEO|ranks) + the "video" permission
+                         // (older notes:)   // v24: «النسخ السابقة» (bring back an earlier save) + clan ranks show only what a clan may have
                          // v25: the repo was renamed (edc-panel -> everyday-panel): follow the name GitHub gives it
                          // v26: «📋 الصق التوكن واتصل» - one press reads the token he just copied on GitHub and connects
                          // v27: the community logo in the header + colours taken from it (cyan / violet / orchid)
 // v23: «استيراد البيانات» - the group straight from VRChat through «مساعد القروبات» (no files)
 // v22: clans = VRChat groups (link, roles, clan ranks linked to roles, own permissions)
 // v21: + "boardlog" (whiteboards: who drew / who wiped; part of "all")
-const SOLO = ["walls","ghost","hours"];   // v19: permissions that are never part of "all" - ticked on their own (v20: + hours)
+const SOLO = ["walls","ghost","hours","vipwatch"];   // v19: permissions that are never part of "all" - ticked on their own (v20: + hours, v29: + vipwatch)
 function saveCfg(){
   const c = cfg(); localStorage.setItem("edc_repo", JSON.stringify({o:c.o,r:c.r,b:c.b}));
   if (c.t) localStorage.setItem("edc_token", c.t);   // the token stays in this browser only, once entered it is never asked again
@@ -519,6 +530,7 @@ async function loadRemote(){
     const f = await gh("config.txt");
     if (!f){ defaults(); render(); pubSig = sig(); say("ما فيه config.txt بعد — بدأنا بالرتب الافتراضية. عدّل واضغط نشر.", "ok"); return; }
     M = fromText(utf8b64(f.content));
+    BASE_CFG = utf8b64(f.content);
     await loadClanSync();
     const a = await gh("atlas.png");
     if (a && a.content) await sliceAtlas("data:image/png;base64," + a.content.replace(/\s/g, ""));
@@ -545,6 +557,64 @@ function scheduleAuto(){
   setLive("● تعديلات جديدة — تنحفظ لحالها بعد ثواني…");
   autoT = setTimeout(() => publish(true), 1200);
 }
+// v31 (his list: «الحفظ بدون ما يمسح شغل غيره»): if config.txt changed on GitHub after this page loaded it (another admin
+// saved), a save merges first - what I changed wins, what the other admin changed since then is kept; pictures I have stay,
+// emblems of clans / ranks only the other admin has come from his atlas.png
+var BASE_CFG = null;
+function cfgLines(t){ return String(t || "").split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith("#")); }
+function cfgKey(s){
+  const p = s.split("|"), k = p[0].trim().toUpperCase(), a = (p[1] || "").trim().toLowerCase();
+  if (k === "CRANK") return k + "|" + a + "|" + (p[2] || "").trim().toLowerCase();
+  if (/^(RANK|CLAN|USER|VIP|VIPT|RING)$/.test(k)) return k + "|" + a;
+  if (/^(ATLAS|RINGS|VIDEO|PERMV)$/.test(k)) return k;
+  return "=" + s;
+}
+function mergeCfg(base, mine, theirs){
+  const B = new Map(), Mi = new Map(), T = new Map();
+  for (const s of cfgLines(base)) B.set(cfgKey(s), s);
+  for (const s of cfgLines(mine)) Mi.set(cfgKey(s), s);
+  for (const s of cfgLines(theirs)) T.set(cfgKey(s), s);
+  const out = [];
+  for (const k of new Set([...Mi.keys(), ...T.keys(), ...B.keys()])){
+    const b = B.get(k), m = Mi.get(k), t = T.get(k);
+    const v = m === b ? t : m;                       // untouched by me: his version (changed / added / removed); else mine
+    if (v != null) out.push(v);
+  }
+  const ord = s => { const k = s.split("|")[0].trim().toUpperCase(); return k === "CLAN" ? 1 : k === "CRANK" ? 2 : 0; };
+  return out.sort((x, y) => ord(x) - ord(y)).join("\n") + "\n";
+}
+function ownerMap(m){
+  const r = new Map();
+  for (const x of m.ranks) r.set("r:" + x.key, x);
+  for (const c of m.clans){ r.set("c:" + c.key, c); for (const x of (c.ranks || [])) r.set("cr:" + c.key + "." + x.key, x); }
+  return r;
+}
+async function adoptMerged(t){
+  const old = ownerMap(M), oldRings = new Map(M.rings.map(r => [r.target, r]));
+  const nm = fromText(t), fresh = [];
+  for (const [k, o] of ownerMap(nm)){
+    const p = old.get(k);
+    if (p && p.img) o.img = p.img;
+    else if (o.cell != null && o.cell >= 0) fresh.push(o);
+  }
+  for (const r of nm.rings){ const p = oldRings.get(r.target); if (p && p.tex){ r.tex = p.tex; r.size = p.size; r.off = p.off; } }
+  if (fresh.length){
+    try {
+      const a = await ghFile("atlas.png");
+      if (a){
+        const im = await loadImg("data:image/png;base64," + a.replace(/\s/g, "")), cw = im.width / COLS, ch = im.height / ROWS;
+        for (const o of fresh){
+          const c = document.createElement("canvas"); c.width = c.height = CELL;
+          c.getContext("2d").drawImage(im, (o.cell % COLS)*cw, Math.floor(o.cell / COLS)*ch, cw, ch, 0, 0, CELL, CELL);
+          o.img = c.toDataURL("image/png");
+        }
+      }
+    } catch(e){}
+  }
+  M = nm;
+  try { await loadClanSync(); } catch(e){}
+  render();
+}
 async function publish(auto){
   clearTimeout(autoT);
   saveCfg();
@@ -554,6 +624,15 @@ async function publish(auto){
   if (publishing){ queued = true; return; }
   publishing = true;
   try {
+    if (BASE_CFG != null){
+      const cf = await gh("config.txt");
+      const theirs = cf && cf.content ? utf8b64(cf.content) : null;
+      if (theirs != null && theirs !== BASE_CFG){
+        await adoptMerged(mergeCfg(BASE_CFG, toText(curAtlasVer, curRingsVer), theirs));
+        BASE_CFG = theirs;
+        say("أدمن ثاني حفظ تعديلات بعد ما فتحت الداشبورد — دمجتها مع تعديلاتك ✓", "ok");
+      }
+    }
     const s0 = sig();
     const ver = Date.now().toString(36);
     setLive("⏳ جاري الحفظ…"); if (!auto) say("جاري الحفظ…");
@@ -575,6 +654,7 @@ async function publish(auto){
     }
     const text = toText(curAtlasVer, rVer);
     await putFile("config.txt", b64utf8(text), "panel: config " + ver);
+    BASE_CFG = text;
     pubSig = s0; markDirty();
     if (!auto) say("تم الحفظ ✓", "ok");
     waitLive(text);
@@ -647,7 +727,11 @@ function dropOn(e, listPath){
 }
 function renderRanks(){
   const n = M.ranks.length;
-  $("t-ranks").innerHTML = `<div class="row" style="justify-content:space-between"><b>الرتب: اسحب ⠿ للترتيب، والأعلى أقوى</b><button onclick="M.ranks.push({key:uid('r'),name:'رتبة جديدة',color:'#E0A050',icon:'star',img:null,perms:['warn']});render()">＋ رتبة</button></div>
+  $("t-ranks").innerHTML = `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><b>مين يشغّل فيديو في الشاشة الكبيرة:</b>
+    <span class="chip ${M.video!=="ranks"?"on":""}" onclick="M.video='all';render()">أي أحد</span>
+    <span class="chip ${M.video==="ranks"?"on":""}" onclick="M.video='ranks';render()">الرتب اللي معها صلاحية «تشغيل فيديو» بس</span>
+    <span class="hint" style="margin:0">(شاشات غرف VIP تبقى لأصحابها)</span></div>
+  <div class="row" style="justify-content:space-between"><b>الرتب: اسحب ⠿ للترتيب، والأعلى أقوى</b><button onclick="M.ranks.push({key:uid('r'),name:'رتبة جديدة',color:'#E0A050',icon:'star',img:null,perms:['warn']});render()">＋ رتبة</button></div>
   <div ${dragList("ranks")}>` + M.ranks.map((r,i) => `
   <div class="item" draggable="true" ondragstart="dragStart(event,'ranks',${i})">
     <span class="handle">⠿</span>${emblem(r, "ranks." + i)}
@@ -706,7 +790,7 @@ function togPerm(i, k){
 // clan rank is linked to roles of the group and has its own permissions, emblem and ring. In an instance opened by a
 // member of the clan (the map asks him if he is in several clans), whoever has a linked role gets that clan rank -
 // only in that instance. Gifts that stay with a player everywhere are for the map's own ranks only.
-const CLAN_BLOCK = ["coins","selfcoins","vip","hours","instclan","walls","ghost","viprooms","radioctl","radioadd"];   // v24: + walls, ghost, VIP rooms, radio control
+const CLAN_BLOCK = ["coins","selfcoins","vip","hours","instclan","walls","ghost","viprooms","radioctl","radioadd","vipwatch"];   // v24: + walls, ghost, VIP rooms, radio control
 let CS = {};          // clans.json: {grp_x: {name, code, members, seen, roles:[{id, name, n}], at}}
 let ROS = {};         // rosters read from the sync file / roster.txt: {grp_x: {all:[hash], by:{grol:[hash]}}}
 const openCP = new Set();
@@ -1056,6 +1140,7 @@ async function restoreHist(i){
   try {
     say("أرجّع النسخة…");
     M = fromText(t);
+    BASE_CFG = null;    // a restore overwrites on purpose
     const a = await ghAt("atlas.png", x.sha);
     if (a) await sliceAtlas("data:image/png;base64," + a.replace(/\s/g, ""));
     if (M.rings.some(r => r.cell >= 0)){
@@ -1127,13 +1212,34 @@ function renderUp(){
   $("upBox").innerHTML = h;
 }
 function renderVip(){
-  $("t-vip").innerHTML = `<div class="row" style="justify-content:space-between"><b>أعضاء VIP (${M.vip.length})</b>${ringBtn("vip")}</div>
-  <div class="row" style="margin:12px 0"><input id="vipNew" placeholder="اسم اللاعب في VRChat بالضبط" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')vipAdd()"><button class="pri" onclick="vipAdd()">＋ إضافة VIP</button></div>
-  <table><tr><th style="width:44px">#</th><th>اسم VRChat</th><th style="width:60px"></th></tr>` +
-  M.vip.map((n,i) => `<tr><td>${i+1}</td><td><input value="${esc(n)}" oninput="M.vip[${i}]=this.value" style="width:100%"></td><td><button class="del" onclick="M.vip.splice(${i},1);render()">✕</button></td></tr>`).join("") +
+  M.vipTypes = M.vipTypes || []; M.vipInfo = M.vipInfo || {};
+  const T = M.vipTypes;
+  const typeOpts = sel => `<option value="">VIP عادي</option>` + T.map(t => `<option value="${esc(t.key)}" ${sel === t.key ? "selected" : ""}>${esc(t.name || t.key)}</option>`).join("");
+  const permBox = (t, ti) => PERM_GROUPS.map(g => `<div class="hint" style="margin:6px 0 2px">${esc(g[0])}</div><div class="row" style="flex-wrap:wrap;gap:6px">` +
+    g[1].map(pp => `<label style="font-size:13px;white-space:nowrap"><input type="checkbox" ${t.perms.includes(pp[0]) ? "checked" : ""} onchange="vipTPerm(${ti},'${pp[0]}',this.checked)"> ${esc(pp[1])}</label>`).join("") + `</div>`).join("");
+  $("t-vip").innerHTML = `<div class="row" style="justify-content:space-between"><b>أنواع الـ VIP (${T.length})</b><button class="pri" onclick="vipTAdd()">＋ نوع جديد</button></div>
+  <p class="hint">كل نوع له اسم ولون والكلام اللي يطلع فوق راس صاحبه، وتقدر تعطيه صلاحيات إدارية (تشتغل في كل الانستنسات).</p>
+  <table><tr><th>الاسم</th><th style="width:70px">اللون</th><th>الكلام فوق الراس</th><th>الصلاحيات</th><th style="width:60px"></th></tr>` +
+  T.map((t, ti) => `<tr><td><input value="${esc(t.name)}" oninput="M.vipTypes[${ti}].name=this.value" style="width:100%"></td>
+    <td><input type="color" value="${esc(t.color || "#FFB86B")}" oninput="M.vipTypes[${ti}].color=this.value"></td>
+    <td><input value="${esc(t.label || "")}" placeholder="مثلاً: VIP ذهبي ★" oninput="M.vipTypes[${ti}].label=this.value" style="width:100%"></td>
+    <td><details><summary>⚙ الصلاحيات ${t.perms.length}</summary>${permBox(t, ti)}</details></td>
+    <td><button class="del" onclick="vipTDel(${ti})">✕</button></td></tr>`).join("") + `</table>${T.length ? "" : `<p class="hint">ما فيه أنواع بعد - الأعضاء يصيرون VIP عادي.</p>`}
+  <div class="row" style="justify-content:space-between;margin-top:18px"><b>أعضاء VIP (${M.vip.length})</b>${ringBtn("vip")}</div>
+  <div class="row" style="margin:12px 0"><input id="vipNew" placeholder="اسم اللاعب في VRChat بالضبط" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')vipAdd()"><button class="pri" onclick="vipAdd()">＋ إضافة VIP</button>
+  <table><tr><th style="width:44px">#</th><th>اسم VRChat</th><th style="width:170px">النوع</th><th>كلام خاص فوق راسه (اختياري)</th><th style="width:60px"></th></tr>` +
+  M.vip.map((n,i) => { const vi = M.vipInfo[String(n).toLowerCase()] || {}; return `<tr><td>${i+1}</td><td><input value="${esc(n)}" onchange="vipRename(${i},this.value)" style="width:100%"></td>
+    <td><select onchange="vipSet(${i},'type',this.value)">${typeOpts(vi.type || "")}</select></td>
+    <td><input value="${esc(vi.text || "")}" placeholder="فاضي = كلام النوع" oninput="vipSet(${i},'text',this.value)" style="width:100%"></td>
+    <td><button class="del" onclick="M.vip.splice(${i},1);render()">✕</button></td></tr>`; }).join("") +
   `</table>${M.vip.length ? "" : `<p class="hint">ما فيه أعضاء VIP بعد.</p>`}
-  <p class="hint">أي اسم تضيفه هنا يصير VIP داخل الماب ويلبس حلقة الـ VIP، خلال دقيقة تقريباً بعد «حفظ ونشر» وبدون رفع للماب.</p>`;
+  <p class="hint">أي اسم تضيفه هنا يصير VIP داخل الماب ويلبس حلقة الـ VIP، وفوق راسه كلام نوعه (أو كلامه الخاص)، وياخذ صلاحيات نوعه - خلال دقيقة تقريباً بعد «حفظ ونشر» وبدون رفع للماب.</p>`;
 }
+function vipTAdd(){ M.vipTypes = M.vipTypes || []; M.vipTypes.push({key:"v" + Date.now().toString(36).slice(-5), name:"VIP جديد", color:"#FFB86B", label:"VIP", perms:[]}); render(); }
+function vipTDel(ti){ const k = M.vipTypes[ti].key; M.vipTypes.splice(ti, 1); Object.values(M.vipInfo || {}).forEach(v => { if (v.type === k) v.type = ""; }); render(); }
+function vipTPerm(ti, p, on){ const t = M.vipTypes[ti]; t.perms = t.perms.filter(x => x !== p); if (on) t.perms.push(p); render(); }
+function vipSet(i, f, v){ M.vipInfo = M.vipInfo || {}; const k = String(M.vip[i]).toLowerCase(); M.vipInfo[k] = Object.assign({type:"", text:""}, M.vipInfo[k] || {}); M.vipInfo[k][f] = v; }
+function vipRename(i, v){ const o = String(M.vip[i]).toLowerCase(), info = (M.vipInfo || {})[o]; M.vip[i] = clean(v); if (info){ delete M.vipInfo[o]; M.vipInfo[M.vip[i].toLowerCase()] = info; } render(); }
 function vipAdd(){
   const v = clean($("vipNew").value); if (!v) return;
   if (!M.vip.some(x => x.toLowerCase() === v.toLowerCase())) M.vip.push(v);
@@ -1318,6 +1424,9 @@ async function renderText(){
     if (t) selfUpdate();
     let used = false; try { used = localStorage.getItem("edc_helper") === "1"; } catch(e){}
     if (t && used && !IS_PHONE && M.clans.some(c => gidOf(c))) refreshAll(true);
+    // v30: while this page stays open on the PC with the helper running, the clans' members are refreshed every 10 minutes
+    if (t && !IS_PHONE) setInterval(() => { let u = false; try { u = localStorage.getItem("edc_helper") === "1"; } catch(e){}
+      if (u && !importing && M.clans.some(c => gidOf(c))) refreshAll(true); }, 600000);
   });
 })();
 </script></body></html>
