@@ -3,7 +3,7 @@
 # USER|vrchat name|rank|clan|clan rank   VIP|vrchat name   RING|rank:key / clan:key / crank:clan.rank / vip / user:name|color|head or shoulder|picture strip|size %|arm: % shoulder->elbow, head: height %
 # ATLAS|cols|rows|version (emblems)   RINGS|cols|rows|version (ring pictures, 1024 x 128 slots)
 PERMV|2
-RANK|rvi373|Everyday Owner|20|#E0A050|crown|warn,all,walls,ghost|-1
+RANK|rvi373|Everyday Owner|20|#E0A050|crown|warn,all,walls,ghost,vipwatch|-1
 RANK|rwkqon|Star|10|#E0A050|star|goto,places,radio,returnitems,calls,staffview,screens,videolink,boards,gamereset,store,boardlog,boardclear,instclan,adminroom,podcast,banroom,all|-1
 CLAN|cxl2in|Lost Island|#3EA0FF|LIC|-1|grp_18792921-6a85-40dd-b872-b9383a6aede
 CRANK|cxl2in|khihln|Group Owner|50|#FFFFFF|all|-1|grol_d4ed20fd-287a-449d-91d2-3ec3b9510cf9
